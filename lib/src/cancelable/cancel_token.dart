@@ -1,6 +1,6 @@
 part of '../../worker_manager.dart';
 
-class _ListenerEntry extends LinkedListEntry<_ListenerEntry> {
+final class _ListenerEntry extends LinkedListEntry<_ListenerEntry> {
   _ListenerEntry(this.listener);
 
   final void Function() listener;

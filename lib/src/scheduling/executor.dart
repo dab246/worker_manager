@@ -146,6 +146,7 @@ class _Executor implements Executor {
 
   @override
   Future<void> dispose() async {
+    _logInfo('dispose');
     _queue.clear();
     await Future.wait(_pool.map((e) => e.kill()));
     _pool.clear();
@@ -153,20 +154,25 @@ class _Executor implements Executor {
   }
 
   void _schedule() {
-    if (_queue.isNotEmpty && !_paused) {
-      final availableIsolate = _pool.firstWhereOrNull((iw) => iw.runnableNumber == null);
-      if (availableIsolate != null) {
-        final task = _queue.removeFirst();
-        _logInfo('isolate with task number ${task.number} begins work');
-        availableIsolate.work(task).then((result) {
-          _logInfo('isolate with task number ${task.number} ends work');
-          task.resultCompleter.complete(result);
-          _schedule();
-        }).catchError((Object error) {
-          task.resultCompleter.completeError(error);
-          _schedule();
-        });
+    try {
+      if (_queue.isNotEmpty && !_paused) {
+        final availableIsolate = _pool.firstWhereOrNull((iw) => iw.runnableNumber == null);
+        if (availableIsolate != null) {
+          final task = _queue.removeFirst();
+          _logInfo('isolate with task number ${task.number} begins work');
+          availableIsolate.work(task).then((result) {
+            _logInfo('isolate with task number ${task.number} ends work');
+            task.resultCompleter.complete(result);
+            _schedule();
+          }).catchError((Object error) {
+            _logInfo('Error = $error');
+            task.resultCompleter.completeError(error);
+            _schedule();
+          });
+        }
       }
+    } catch (e) {
+      _logInfo('Exception = $e');
     }
   }
 

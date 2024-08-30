@@ -4,7 +4,7 @@ description: Executor allows you to create a queue of tasks for isolate pool
 homepage: "https://github.com/Renesanse/worker_manager"
 
 environment:
-  sdk: ">=2.12.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   async: ^2.8.2

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:isolate';
 import 'package:async/async.dart';
 import 'package:worker_manager/src/scheduling/runnable.dart';
@@ -63,25 +64,30 @@ class WorkerImpl implements Worker {
   static FutureOr _execute(runnable) => runnable();
 
   static void _anotherIsolate(SendPort sendPort) {
-    final receivePort = ReceivePort();
-    sendPort.send(receivePort.sendPort);
-    receivePort.listen((message) async {
-      try {
-        final currentMessage = message as Message;
-        final function = currentMessage.function;
-        final argument = currentMessage.argument as Runnable;
-        argument.sendPort = TypeSendPort(sendPort);
-        final result = await function(argument);
-        sendPort.send(Result.value(result));
-      } catch (error) {
+    try {
+      final receivePort = ReceivePort();
+      sendPort.send(receivePort.sendPort);
+      receivePort.listen((message) async {
         try {
-          sendPort.send(Result.error(error));
+          final currentMessage = message as Message;
+          final function = currentMessage.function;
+          final argument = currentMessage.argument as Runnable;
+          argument.sendPort = TypeSendPort(sendPort);
+          final result = await function(argument);
+          sendPort.send(Result.value(result));
         } catch (error) {
-          sendPort.send(Result.error(
-              'cant send error with too big stackTrace, error is : ${error.toString()}'));
+          log('WorkerImpl::_anotherIsolate: Exception = $error');
+          try {
+            sendPort.send(Result.error(error));
+          } catch (error) {
+            sendPort.send(Result.error(
+                'cant send error with too big stackTrace, error is : ${error.toString()}'));
+          }
         }
-      }
-    });
+      });
+    } catch (e) {
+      log('WorkerImpl::_anotherIsolate: Exception_2 = $e');
+    }
   }
 
   @override
