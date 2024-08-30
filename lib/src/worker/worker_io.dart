@@ -53,12 +53,24 @@ class WorkerImpl implements Worker {
   // inout T
   @override
   Future<O> work<A, B, C, D, O, T>(Task<A, B, C, D, O, T> task) async {
-    _runnableNumber = task.number;
-    _onUpdateProgress = task.onUpdateProgress;
-    _result = Completer<Object>();
-    _sendPort.send(Message(_execute, task.runnable));
-    final resultValue = await (_result.future as Future<O>);
-    return resultValue;
+    try {
+      _runnableNumber = task.number;
+      _onUpdateProgress = task.onUpdateProgress;
+      _result = Completer<Object>();
+      final message = Message(_execute, task.runnable);
+      log('WorkerImpl::work:message: ${message.runtimeType}');
+      log('WorkerImpl::work:message: $message');
+      try {
+        _sendPort.send(message);
+      } catch (ex) {
+        log('WorkerImpl::work:_sendPort::Exception = $ex');
+      }
+      final resultValue = await (_result.future as Future<O>);
+      return resultValue;
+    } catch (e, s) {
+      log('WorkerImpl::work:catch = $e | strace: $s');
+      throw Exception(e);
+    }
   }
 
   static FutureOr _execute(runnable) => runnable();
